@@ -27,13 +27,10 @@ const HOST = process.env["API_HOST"] ?? "0.0.0.0";
 async function buildApp() {
   const app = Fastify({
     // Use pino logger — structured JSON logs, plays well with log aggregators
-    logger: {
-      level: process.env["NODE_ENV"] === "production" ? "info" : "debug",
-      transport:
-        process.env["NODE_ENV"] !== "production"
-          ? { target: "pino-pretty", options: { colorize: true } }
-          : undefined,
-    },
+    logger:
+      process.env["NODE_ENV"] !== "production"
+        ? { level: "debug", transport: { target: "pino-pretty", options: { colorize: true } } }
+        : { level: "info" },
     // Trust the X-Forwarded-For header when behind a proxy (e.g. nginx, ALB)
     trustProxy: process.env["NODE_ENV"] === "production",
   });

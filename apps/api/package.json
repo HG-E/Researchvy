@@ -14,7 +14,7 @@
     "clean": "rm -rf dist"
   },
   "dependencies": {
-    "@prisma/client": "^5.13.0",
+    "@prisma/client": "5.22.0",
     "@researchvy/shared": "workspace:*",
     "bcryptjs": "^2.4.3",
     "fastify": "^4.27.0",

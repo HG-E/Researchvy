@@ -38,3 +38,33 @@
     transition: stroke-dashoffset 1s ease-in-out;
   }
 }
+
+/* ── Print styles for /report page ─────────────────────────────────────── */
+@media print {
+  /* Hide everything marked screen-only */
+  .print\:hidden { display: none !important; }
+
+  /* Remove shadow/bg from the document wrapper */
+  .print\:shadow-none { box-shadow: none !important; }
+  .print\:bg-white { background-color: #fff !important; }
+
+  /* Remove margins the browser adds */
+  @page {
+    margin: 2cm;
+    size: A4 portrait;
+  }
+
+  /* Prevent cards from breaking across pages */
+  .card, section, article {
+    break-inside: avoid;
+  }
+
+  /* Reset link colours for print */
+  a { color: #4f46e5 !important; text-decoration: underline; }
+
+  /* Ensure progress bars print (some browsers hide backgrounds) */
+  * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+}

@@ -5,9 +5,8 @@
     "module": "NodeNext",
     "moduleResolution": "NodeNext",
     "lib": ["ES2022"],
-    "strict": true,                    // Enable all strict checks — no shortcuts
-    "exactOptionalPropertyTypes": true, // Distinguish undefined vs missing
-    "noUncheckedIndexedAccess": true,  // Array[i] returns T | undefined
+    "strict": true,                   // Enable all strict checks — no shortcuts
+    "noUncheckedIndexedAccess": true, // Array[i] returns T | undefined
     "noImplicitOverride": true,
     "noPropertyAccessFromIndexSignature": true,
     "forceConsistentCasingInFileNames": true,

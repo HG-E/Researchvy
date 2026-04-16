@@ -151,7 +151,7 @@ export const authRoutes: FastifyPluginAsync = async (fastify) => {
     preHandler: [fastify.authenticate],
   }, async (req, reply) => {
     // state = signed JWT containing userId — verified on callback to prevent CSRF
-    const state = fastify.jwt.sign({ userId: req.user.userId }, { expiresIn: "10m" });
+    const state = fastify.jwt.sign({ userId: req.user.userId, role: req.user.role }, { expiresIn: "10m" });
     const url = getOrcidAuthUrl(state);
     reply.redirect(url);
   });

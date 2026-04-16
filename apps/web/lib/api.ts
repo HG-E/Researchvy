@@ -128,3 +128,34 @@ export const profile = {
       body: JSON.stringify(data),
     }),
 };
+
+// ─────────────────────────────────────────────────────────────────────────────
+// PUBLIC RESEARCHER SEARCH (no auth)
+// Powers the /check flow — proxies OpenAlex so we avoid CORS and can
+// normalise the response shape.
+// ─────────────────────────────────────────────────────────────────────────────
+
+export const publicSearch = {
+  // Search by name or ORCID, returns candidate profiles
+  search: (mode: "name" | "orcid", query: string) => {
+    const qs = new URLSearchParams({ mode, q: query }).toString();
+    return apiFetch(`/api/v1/researchers/search?${qs}`);
+  },
+
+  // Fetch a single public profile by OpenAlex ID (for the results page)
+  profile: (openAlexId: string) =>
+    apiFetch(`/api/v1/researchers/public/${openAlexId}`),
+};
+
+// ─────────────────────────────────────────────────────────────────────────────
+// RECOMMENDATIONS (full CRUD)
+// ─────────────────────────────────────────────────────────────────────────────
+
+export const recommendations = {
+  list: () => apiFetch("/api/v1/recommendations"),
+  update: (id: string, data: { isActioned?: boolean; isDismissed?: boolean }) =>
+    apiFetch(`/api/v1/recommendations/${id}`, {
+      method: "PATCH",
+      body: JSON.stringify(data),
+    }),
+};
