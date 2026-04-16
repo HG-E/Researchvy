@@ -26,7 +26,7 @@ services:
     # Install pnpm, then install deps, build shared types, then build API
     buildCommand: >
       npm install -g pnpm@9 &&
-      pnpm install &&
+      pnpm install --filter "@researchvy/api..." &&
       pnpm db:generate &&
       pnpm --filter=@researchvy/shared build &&
       pnpm --filter=@researchvy/api build
