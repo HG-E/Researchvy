@@ -3,42 +3,28 @@
   "version": "0.1.0",
   "private": true,
   "description": "Researcher Visibility Intelligence Platform",
-
-  // pnpm is declared here so Node.js Corepack enforces the correct package manager.
-  // Anyone who runs `npm install` by mistake gets a clear error.
   "packageManager": "pnpm@9.1.0",
-
-  // pnpm also reads pnpm-workspace.yaml — this workspaces field is kept
-  // for tooling compatibility (e.g. some editors/scripts read it).
   "workspaces": [
     "apps/*",
     "packages/*"
   ],
-
   "scripts": {
-    // turbo run dev — starts all dev servers in parallel, respects dependency order
-    "dev":           "turbo run dev",
-    "dev:api":       "turbo run dev --filter=@researchvy/api",
-    "dev:web":       "turbo run dev --filter=@researchvy/web",
-
-    // turbo run build — builds shared first, then api + web in parallel
-    "build":         "turbo run build",
-    "typecheck":     "turbo run typecheck",
-    "lint":          "turbo run lint",
-    "test":          "turbo run test",
-    "clean":         "turbo run clean && rm -rf node_modules",
-
-    // Database (Prisma lives at root so both API and seed scripts can use it)
-    "db:generate":   "prisma generate",
-    "db:migrate":    "prisma migrate dev",
+    "dev":             "turbo run dev",
+    "dev:api":         "turbo run dev --filter=@researchvy/api",
+    "dev:web":         "turbo run dev --filter=@researchvy/web",
+    "build":           "turbo run build",
+    "typecheck":       "turbo run typecheck",
+    "lint":            "turbo run lint",
+    "test":            "turbo run test",
+    "clean":           "turbo run clean && rm -rf node_modules",
+    "db:generate":     "prisma generate",
+    "db:migrate":      "prisma migrate dev",
     "db:migrate:prod": "prisma migrate deploy",
-    "db:seed":       "tsx prisma/seed.ts",
-    "db:studio":     "prisma studio",
-    "db:reset":      "prisma migrate reset --force"
+    "db:seed":         "tsx prisma/seed.ts",
+    "db:studio":       "prisma studio",
+    "db:reset":        "prisma migrate reset --force"
   },
-
   "devDependencies": {
-    // Turborepo — orchestrates all builds/tasks across the monorepo
     "turbo": "^2.0.6",
     "typescript": "^5.4.5",
     "eslint": "^8.57.0",
@@ -48,7 +34,6 @@
     "tsx": "^4.10.5",
     "@types/node": "^20.12.12"
   },
-
   "engines": {
     "node": ">=20.0.0",
     "pnpm": ">=9.0.0"
