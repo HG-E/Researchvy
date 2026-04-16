@@ -1,0 +1,30 @@
+// apps/web/app/layout.tsx
+// Root layout — wraps every page with auth context and global styles.
+
+import type { Metadata } from "next";
+import "./globals.css";
+import { AuthProvider } from "@/lib/auth-context";
+
+export const metadata: Metadata = {
+  title: {
+    default: "Researchvy — Researcher Visibility Intelligence",
+    template: "%s | Researchvy",
+  },
+  description:
+    "Understand and improve your academic visibility. Track citations, policy impact, and get actionable recommendations.",
+  keywords: ["researcher", "academic visibility", "h-index", "citations", "policy impact"],
+};
+
+export default function RootLayout({ children }: { children: React.ReactNode }) {
+  return (
+    <html lang="en">
+      <head>
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+      </head>
+      <body>
+        <AuthProvider>{children}</AuthProvider>
+      </body>
+    </html>
+  );
+}

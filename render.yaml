@@ -1,0 +1,87 @@
+# render.yaml — Render Blueprint (Infrastructure as Code)
+#
+# This single file defines ALL Render services for Researchvy.
+# Connect it once in the Render dashboard and every future git push
+# to `main` auto-deploys the latest code — zero manual steps.
+#
+# How to use:
+#   1. render.com → New → Blueprint → Connect GitHub → HG-E/Researchvy
+#   2. Render reads this file and creates all services automatically
+#   3. Fill in the env vars marked `sync: false` in the Render dashboard
+#
+# Database: We use Neon (neon.tech) NOT Render's Postgres —
+#   because Render's free Postgres expires after 90 days.
+#   Neon's free tier is permanent. Set DATABASE_URL manually from Neon.
+
+services:
+
+  # ── API (Fastify Node.js) ────────────────────────────────────────────────
+  - type: web
+    name: researchvy-api
+    runtime: node
+    # Run from repo root so we have access to the full monorepo
+    rootDir: .
+    # Install pnpm, then install deps, build shared types, then build API
+    buildCommand: >
+      npm install -g pnpm@9 &&
+      pnpm install --frozen-lockfile &&
+      pnpm --filter=@researchvy/shared build &&
+      pnpm --filter=@researchvy/api build
+    startCommand: node apps/api/dist/index.js
+    # Render uses this to check the service is alive before routing traffic
+    healthCheckPath: /health
+    # Auto-deploy on every push to main
+    autoDeploy: true
+    envVars:
+      - key: NODE_ENV
+        value: production
+      # Set this in Render dashboard from your Neon project connection string
+      # Format: postgresql://user:password@ep-xxx.neon.tech/researchvy?sslmode=require
+      - key: DATABASE_URL
+        sync: false
+      # Render can auto-generate a secure random value for these
+      - key: JWT_SECRET
+        generateValue: true
+      - key: ENCRYPTION_KEY
+        sync: false          # Run: openssl rand -hex 32
+      # ORCID OAuth — register at orcid.org/developer-tools (free)
+      - key: ORCID_CLIENT_ID
+        sync: false
+      - key: ORCID_CLIENT_SECRET
+        sync: false
+      # This must match what you register in ORCID developer settings exactly:
+      # https://api.yoursite.com/api/v1/auth/orcid/callback
+      - key: ORCID_REDIRECT_URI
+        sync: false
+      - key: ORCID_BASE_URL
+        value: https://orcid.org
+      - key: ORCID_API_URL
+        value: https://pub.orcid.org/v3.0
+      # Your real email — OpenAlex gives higher rate limits to identified callers
+      - key: OPENALEX_EMAIL
+        sync: false
+      # Your frontend Vercel URL — e.g. https://researchvy.vercel.app or your custom domain
+      - key: NEXTAUTH_URL
+        sync: false
+      # Upstash Redis URL (optional — skip for v1, add later)
+      - key: REDIS_URL
+        sync: false
+
+  # ── Python Worker (OpenAlex data sync) ──────────────────────────────────
+  - type: worker
+    name: researchvy-worker
+    runtime: python
+    # Worker lives in its own sub-directory
+    rootDir: workers
+    buildCommand: pip install -r requirements.txt
+    startCommand: python worker.py
+    autoDeploy: true
+    envVars:
+      # Same Neon DATABASE_URL as the API — workers read/write the same DB
+      - key: DATABASE_URL
+        sync: false
+      - key: OPENALEX_EMAIL
+        sync: false
+      # How often the worker polls for new sync jobs (seconds)
+      - key: WORKER_POLL_INTERVAL
+        value: "15"

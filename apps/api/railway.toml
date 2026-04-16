@@ -1,0 +1,44 @@
+# apps/api/railway.toml
+# Railway deployment config for the Fastify API.
+#
+# How to connect:
+#   1. Go to railway.app → New Project → Deploy from GitHub
+#   2. Select HG-E/Researchvy
+#   3. Set "Root Directory" to: apps/api
+#   4. Add a Postgres plugin (Railway dashboard → Add Plugin → PostgreSQL)
+#   5. Add a Redis plugin (Railway dashboard → Add Plugin → Redis)
+#   6. Railway auto-injects DATABASE_URL and REDIS_URL from the plugins
+#   7. Add remaining env vars (JWT_SECRET, ENCRYPTION_KEY, ORCID_*, etc.)
+#
+# Environment variables Railway injects automatically:
+#   DATABASE_URL  → from the Postgres plugin
+#   REDIS_URL     → from the Redis plugin
+#   PORT          → Railway sets this — Fastify reads it
+#   RAILWAY_ENVIRONMENT → "production" or "staging"
+
+[build]
+# Nixpacks auto-detects Node.js and runs pnpm install + build
+builder = "nixpacks"
+
+# Build command: install from monorepo root, then build only the API
+# --filter=@researchvy/api also builds @researchvy/shared (its dependency)
+buildCommand = "cd ../.. && pnpm install --frozen-lockfile && pnpm build --filter=@researchvy/api"
+
+[deploy]
+# Start the compiled JS output
+startCommand = "node dist/index.js"
+
+# Restart on failure (Railway handles the retry with backoff)
+restartPolicyType = "ON_FAILURE"
+restartPolicyMaxRetries = 3
+
+# Health check — Railway uses this to verify the service is up before routing traffic.
+# Hitting /health returns { status: "ok" } — we built this endpoint in apps/api/src/index.ts
+healthcheckPath = "/health"
+healthcheckTimeout = 30
+
+[deploy.releaseCommand]
+# Run DB migrations before the new version takes traffic.
+# This ensures the schema is always up-to-date before the new code runs.
+# Critical for zero-downtime deploys.
+command = "cd ../.. && pnpm db:migrate:prod"

@@ -1,0 +1,6 @@
+# pnpm-workspace.yaml
+# Declares all packages in this monorepo.
+# pnpm uses this to link local packages together (e.g. @researchvy/shared).
+packages:
+  - "apps/*"
+  - "packages/*"

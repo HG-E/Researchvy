@@ -1,0 +1,35 @@
+{
+  "$schema": "https://turbo.build/schema.json",
+  // Turborepo task pipeline.
+  // Key concept: "dependsOn: ['^build']" means "run the build task in
+  // all dependencies first". So apps/api builds only after packages/shared builds.
+  // This is what makes monorepo builds correct AND fast.
+  "tasks": {
+    "build": {
+      // ^ means "run build in all packages this depends on first"
+      "dependsOn": ["^build"],
+      "outputs": ["dist/**", ".next/**", "!.next/cache/**"]
+    },
+    "dev": {
+      // Dev servers are long-running — never cache their output
+      "cache": false,
+      "persistent": true
+    },
+    "typecheck": {
+      // Must build shared types before type-checking apps that import them
+      "dependsOn": ["^build"],
+      "outputs": []
+    },
+    "lint": {
+      "outputs": []
+    },
+    "test": {
+      "dependsOn": ["^build"],
+      "outputs": ["coverage/**"]
+    },
+    "clean": {
+      // Deletes build artifacts — never cache
+      "cache": false
+    }
+  }
+}

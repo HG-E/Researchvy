@@ -1,0 +1,341 @@
+// Researchvy — Prisma Schema
+// Database: PostgreSQL 16
+// ORM: Prisma 5
+//
+// Design principles:
+//   - Every table has cuid() primary keys (URL-safe, sortable alternatives to UUID)
+//   - Soft-delete is NOT used — we use hard deletes with cascade rules
+//   - All external IDs (ORCID, OpenAlex, DOI) have @unique constraints
+//   - Raw API responses stored as Json for auditability without schema churn
+//   - Visibility scores are versioned so algorithm changes don't break history
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// AUTH LAYER
+// ─────────────────────────────────────────────────────────────────────────────
+
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  // passwordHash is null for ORCID-only accounts
+  passwordHash String?
+  name         String
+  role         UserRole @default(RESEARCHER)
+  emailVerified Boolean @default(false)
+
+  researcher   Researcher?
+  sessions     Session[]
+
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([email])
+}
+
+model Session {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  // Stored as hash — never store raw tokens in DB
+  tokenHash String   @unique
+  expiresAt DateTime
+  userAgent String?
+  ipAddress String?
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([expiresAt]) // For cleanup jobs
+}
+
+enum UserRole {
+  RESEARCHER
+  ADMIN
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// RESEARCHER PROFILE
+// ─────────────────────────────────────────────────────────────────────────────
+
+model Researcher {
+  id     String @id @default(cuid())
+  userId String @unique
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // ── ORCID Integration ──────────────────────────────────────────────────────
+  // ORCID is the gold standard for researcher identity.
+  // We store the access token encrypted at rest (AES-256).
+  orcidId          String? @unique
+  orcidAccessToken String? // AES-256-GCM encrypted
+  orcidTokenExpiry DateTime?
+
+  // ── Cross-platform IDs (resolved by workers) ─────────────────────────────
+  // OpenAlex is our primary free citation/impact data source.
+  openAlexId        String? @unique
+  semanticScholarId String? @unique
+
+  // ── Profile ───────────────────────────────────────────────────────────────
+  displayName  String
+  institution  String?
+  department   String?
+  country      String? // ISO 3166-1 alpha-2
+  // Research domains — stored as array for flexible multi-field researchers
+  fields       String[]
+  bio          String?
+  websiteUrl   String?
+  twitterHandle String?
+
+  // ── Cached Aggregate Stats ────────────────────────────────────────────────
+  // These are denormalized for fast dashboard reads.
+  // Source of truth is always the publications table + visibility scores.
+  hIndex           Int @default(0)
+  totalCitations   Int @default(0)
+  publicationCount Int @default(0)
+  lastSyncedAt     DateTime?
+
+  // ── Relations ─────────────────────────────────────────────────────────────
+  publications     Publication[]
+  visibilityScores VisibilityScore[]
+  syncJobs         SyncJob[]
+  recommendations  Recommendation[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([orcidId])
+  @@index([openAlexId])
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// PUBLICATIONS
+// ─────────────────────────────────────────────────────────────────────────────
+
+model Publication {
+  id           String @id @default(cuid())
+  researcherId String
+  researcher   Researcher @relation(fields: [researcherId], references: [id], onDelete: Cascade)
+
+  // ── Identifiers ───────────────────────────────────────────────────────────
+  doi        String? @unique // Digital Object Identifier — the canonical ID
+  openAlexId String? @unique // W1234567890
+  pmid       String? @unique // PubMed ID for health/bio papers
+
+  // ── Core Metadata ─────────────────────────────────────────────────────────
+  title    String
+  abstract String? // May be null for some sources
+  year     Int?
+  type     PublicationType @default(JOURNAL_ARTICLE)
+
+  // ── Venue ─────────────────────────────────────────────────────────────────
+  journalName String?
+  venueName   String? // For conferences or journals
+  volume      String?
+  issue       String?
+  pages       String?
+
+  // ── Impact Metrics ────────────────────────────────────────────────────────
+  citationCount  Int     @default(0)
+  openAccess     Boolean @default(false)
+  openAccessUrl  String? // URL to freely accessible version
+
+  // ── Co-authors ────────────────────────────────────────────────────────────
+  // Stored as JSON to avoid a heavy many-to-many join for display purposes.
+  // We track co-author ORCID/OpenAlex IDs for collaboration scoring.
+  coAuthors Json? // [{ name, orcidId?, openAlexId? }]
+
+  // ── Policy & Media Impact ─────────────────────────────────────────────────
+  policyMentions PolicyMention[]
+
+  // ── Data Provenance ───────────────────────────────────────────────────────
+  source  DataSource @default(MANUAL)
+  // rawData stores the original API payload for debugging + re-processing
+  rawData Json?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([researcherId, year])
+  @@index([citationCount]) // For sorting by impact
+}
+
+enum PublicationType {
+  JOURNAL_ARTICLE
+  CONFERENCE_PAPER
+  BOOK_CHAPTER
+  BOOK
+  PREPRINT
+  THESIS
+  DATASET
+  REPORT
+  OTHER
+}
+
+enum DataSource {
+  ORCID           // Fetched via ORCID API with user consent
+  OPEN_ALEX       // Fetched from OpenAlex public API
+  SEMANTIC_SCHOLAR // Fetched from Semantic Scholar API
+  CROSSREF        // Fetched from CrossRef API
+  MANUAL          // User entered manually
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// POLICY MENTIONS
+// Tracks when a research paper is cited in a policy document.
+// Source: OpenAlex "referenced_works" + policy-type filtering.
+// ─────────────────────────────────────────────────────────────────────────────
+
+model PolicyMention {
+  id            String      @id @default(cuid())
+  publicationId String
+  publication   Publication @relation(fields: [publicationId], references: [id], onDelete: Cascade)
+
+  // The policy document that cites this paper
+  policyTitle  String
+  policyUrl    String?
+  // Type helps weight the score: "un_report" > "ngo_report" > "government" etc.
+  policyType   PolicyDocumentType @default(OTHER)
+  country      String? // ISO 3166-1 alpha-2 of the issuing body
+  year         Int?
+  organization String? // e.g., "WHO", "UK Parliament", "IPCC"
+
+  // Data source and raw evidence
+  source  String // "open_alex", "altmetric" — for future multi-source support
+  rawData Json?  // Source API response snippet for verification
+
+  createdAt DateTime @default(now())
+
+  @@index([publicationId])
+}
+
+enum PolicyDocumentType {
+  UN_REPORT        // Highest weight: UN, WHO, World Bank publications
+  GOVERNMENT       // National government policy documents
+  PARLIAMENT       // Parliamentary briefings/bills
+  NGO_REPORT       // NGO/think-tank reports
+  REGULATORY       // Regulatory filings
+  OTHER
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// VISIBILITY SCORES
+// The core value proposition: a single explainable score per researcher.
+// We keep history so researchers can see their improvement over time.
+// ─────────────────────────────────────────────────────────────────────────────
+
+model VisibilityScore {
+  id           String     @id @default(cuid())
+  researcherId String
+  researcher   Researcher @relation(fields: [researcherId], references: [id], onDelete: Cascade)
+
+  // ── Composite Score (0–100) ───────────────────────────────────────────────
+  overallScore Float
+
+  // ── Component Scores (0–100 each) ─────────────────────────────────────────
+  // Weights are defined in the scoring service, not here.
+  // Storing raw component scores enables re-weighting without recomputation.
+  citationScore      Float // h-index + raw citation count normalized to field
+  velocityScore      Float // Citation growth rate over rolling 3 years
+  policyScore        Float // Weighted count of policy document mentions
+  openAccessScore    Float // % of publications that are open access
+  collaborationScore Float // Breadth and depth of co-author network
+  // mediaScore is planned for v2 (Altmetric integration)
+
+  // ── Explainability ────────────────────────────────────────────────────────
+  // breakdown stores human-readable explanations for each component.
+  // This is surfaced in the UI so researchers know WHY their score is what it is.
+  breakdown Json
+  // Algorithm version — bump when scoring logic changes materially
+  // so old scores aren't compared to new ones unfairly
+  algorithmVersion String @default("1.0")
+
+  computedAt DateTime @default(now())
+
+  @@index([researcherId, computedAt])
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// RECOMMENDATIONS
+// Actionable suggestions generated after scoring.
+// e.g. "3 of your papers are behind paywalls — upload to arXiv to improve score"
+// ─────────────────────────────────────────────────────────────────────────────
+
+model Recommendation {
+  id           String     @id @default(cuid())
+  researcherId String
+  researcher   Researcher @relation(fields: [researcherId], references: [id], onDelete: Cascade)
+
+  type       RecommendationType
+  title      String  // Short action title
+  body       String  // Detailed explanation
+  impact     ImpactLevel // How much this could improve the score
+  isActioned Boolean @default(false) // User marked as done
+  isDismissed Boolean @default(false)
+
+  // Link to the relevant resource, if applicable
+  resourceUrl String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([researcherId, isActioned])
+}
+
+enum RecommendationType {
+  OPEN_ACCESS         // Make papers freely accessible
+  POLICY_SUBMISSION   // Submit to policy consultation
+  PREPRINT_UPLOAD     // Upload to arXiv/bioRxiv
+  ORCID_COMPLETE      // Complete ORCID profile
+  PROFILE_COMPLETE    // Fill in missing profile fields
+  COLLABORATION       // Suggested collaborators in your field
+  CONFERENCE          // High-impact conferences to target
+}
+
+enum ImpactLevel {
+  LOW
+  MEDIUM
+  HIGH
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SYNC JOBS
+// Tracks background data-fetch operations (ORCID, OpenAlex, etc.)
+// Workers write to this table; the API reads job status for progress UI.
+// ─────────────────────────────────────────────────────────────────────────────
+
+model SyncJob {
+  id           String     @id @default(cuid())
+  researcherId String
+  researcher   Researcher @relation(fields: [researcherId], references: [id], onDelete: Cascade)
+
+  source    DataSource
+  status    JobStatus @default(PENDING)
+  // trigger: "manual" (user clicked sync) or "scheduled" (cron)
+  trigger   String    @default("manual")
+
+  startedAt   DateTime?
+  completedAt DateTime?
+  error       String? // Last error message if FAILED
+
+  // Progress counters for UI
+  itemsFound     Int @default(0)
+  itemsProcessed Int @default(0)
+
+  createdAt DateTime @default(now())
+
+  @@index([researcherId, createdAt])
+  @@index([status]) // For worker polling
+}
+
+enum JobStatus {
+  PENDING
+  RUNNING
+  COMPLETED
+  FAILED
+}

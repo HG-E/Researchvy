@@ -1,0 +1,14 @@
+# Normalize line endings to LF in the repo, regardless of OS.
+# Windows contributors get CRLF locally, but the repo stores LF — consistent everywhere.
+* text=auto eol=lf
+
+# Force these to always be LF (shell scripts break with CRLF)
+*.sh text eol=lf
+*.py text eol=lf
+
+# Binary files — never touch line endings
+*.png binary
+*.jpg binary
+*.ico binary
+*.woff2 binary
+*.ttf binary

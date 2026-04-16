@@ -1,0 +1,25 @@
+# workers/railway.toml
+# Railway deployment config for the Python data sync worker.
+#
+# How to connect:
+#   1. In your Railway project, click "New Service" → "GitHub Repo"
+#   2. Select the same HG-E/Researchvy repo
+#   3. Set "Root Directory" to: workers
+#   4. This service shares the same Postgres as the API (same Railway project)
+#   5. Add environment variables: DATABASE_URL (link to Postgres plugin), OPENALEX_EMAIL
+#
+# The worker needs NO public port — it only reads from the DB, never receives HTTP.
+# Railway handles this with a "worker" service type (no inbound traffic).
+
+[build]
+builder = "nixpacks"
+# Nixpacks auto-detects Python via requirements.txt
+buildCommand = "pip install -r requirements.txt"
+
+[deploy]
+startCommand = "python worker.py"
+restartPolicyType = "ON_FAILURE"
+restartPolicyMaxRetries = 5
+
+# No health check path — workers don't expose HTTP endpoints.
+# Railway monitors the process exit code instead.

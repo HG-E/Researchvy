@@ -1,0 +1,26 @@
+# .devcontainer/docker-compose.dev.yml
+# Extends the root docker-compose.yml with the actual dev container service.
+# The devcontainer.json mounts both this file AND the root docker-compose.yml.
+
+version: "3.9"
+
+services:
+  devcontainer:
+    image: mcr.microsoft.com/devcontainers/base:ubuntu-22.04
+    volumes:
+      # Mount the project root into the container
+      - ..:/workspace:cached
+    command: sleep infinity  # Keep container alive — VS Code connects to it
+    environment:
+      # Pre-set environment variables for dev convenience.
+      # These point to the Postgres + Redis containers defined in docker-compose.yml.
+      DATABASE_URL: postgresql://researchvy:researchvy_secret@postgres:5432/researchvy_dev
+      REDIS_URL: redis://redis:6379
+    # Connect to the same network as postgres + redis
+    networks:
+      - default
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy

@@ -1,0 +1,43 @@
+# railway.toml (root)
+# This file documents the full Railway project structure.
+# Individual service configs live in apps/api/railway.toml and workers/railway.toml.
+#
+# ─────────────────────────────────────────────────────────────────────────────
+# FULL RAILWAY PROJECT SETUP GUIDE
+# ─────────────────────────────────────────────────────────────────────────────
+#
+# Railway project: "Researchvy"
+# Services to create:
+#
+#   [1] api          → Root Dir: apps/api       (Fastify Node.js)
+#   [2] worker       → Root Dir: workers        (Python sync worker)
+#   [3] postgres     → Railway Postgres plugin
+#   [4] redis        → Railway Redis plugin
+#
+# Environment variables (set per service in Railway dashboard):
+#
+#   ── api ──────────────────────────────────────────────────────────────────
+#   DATABASE_URL          auto-injected by Railway Postgres plugin
+#   REDIS_URL             auto-injected by Railway Redis plugin
+#   JWT_SECRET            openssl rand -hex 64
+#   ENCRYPTION_KEY        openssl rand -hex 32
+#   ORCID_CLIENT_ID       from orcid.org/developer-tools
+#   ORCID_CLIENT_SECRET   from orcid.org/developer-tools
+#   ORCID_REDIRECT_URI    https://your-api.railway.app/api/v1/auth/orcid/callback
+#   ORCID_BASE_URL        https://orcid.org
+#   ORCID_API_URL         https://pub.orcid.org/v3.0
+#   OPENALEX_EMAIL        your production email
+#   NEXTAUTH_URL          https://your-frontend.vercel.app
+#   NODE_ENV              production
+#
+#   ── worker ───────────────────────────────────────────────────────────────
+#   DATABASE_URL          link to same Postgres plugin (Railway "Reference Variable")
+#   OPENALEX_EMAIL        your production email
+#
+# ─────────────────────────────────────────────────────────────────────────────
+# Using Railway Reference Variables:
+#   Instead of copy-pasting DATABASE_URL to each service,
+#   use Railway's variable reference syntax in the worker:
+#     DATABASE_URL = ${{Postgres.DATABASE_URL}}
+#   This auto-updates if the DB URL ever changes.
+# ─────────────────────────────────────────────────────────────────────────────

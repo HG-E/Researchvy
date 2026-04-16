@@ -1,0 +1,91 @@
+{
+  // GitHub Codespaces configuration.
+  // When you open this repo in Codespaces (or Gitpod), this file tells it
+  // exactly what environment to build — same tools, same ports, every time.
+  "name": "Researchvy Dev",
+
+  // Use our own docker-compose so Postgres + Redis start automatically
+  // alongside the dev container — no manual `docker-compose up` needed.
+  "dockerComposeFile": ["../docker-compose.yml", "docker-compose.dev.yml"],
+  "service": "devcontainer",
+  "workspaceFolder": "/workspace",
+
+  // Features install tools into the container declaratively.
+  // This is better than a custom Dockerfile — easier to update.
+  "features": {
+    // Node.js 20 LTS
+    "ghcr.io/devcontainers/features/node:1": {
+      "version": "20",
+      "nodeGypDependencies": false
+    },
+    // Python 3.11 (for workers)
+    "ghcr.io/devcontainers/features/python:1": {
+      "version": "3.11",
+      "installTools": true
+    },
+    // GitHub CLI — for creating PRs, issues from terminal
+    "ghcr.io/devcontainers/features/github-cli:1": {},
+    // Common Unix tools: git, curl, jq, etc.
+    "ghcr.io/devcontainers/features/common-utils:2": {
+      "installZsh": true,
+      "configureZshAsDefault": true
+    }
+  },
+
+  // Run after container is created — installs dependencies, sets up DB.
+  "postCreateCommand": "bash .devcontainer/post-create.sh",
+
+  // Forward ports from container to your browser (Codespaces creates HTTPS URLs)
+  "forwardPorts": [
+    3000,  // Next.js web
+    3001,  // Fastify API
+    5432,  // Postgres (for connecting with TablePlus/DBeaver)
+    6379,  // Redis
+    5555   // Prisma Studio
+  ],
+
+  "portsAttributes": {
+    "3000": { "label": "Web (Next.js)",   "onAutoForward": "openBrowser" },
+    "3001": { "label": "API (Fastify)",   "onAutoForward": "notify" },
+    "5432": { "label": "PostgreSQL",      "onAutoForward": "silent" },
+    "6379": { "label": "Redis",           "onAutoForward": "silent" },
+    "5555": { "label": "Prisma Studio",   "onAutoForward": "notify" }
+  },
+
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        // TypeScript + ESLint
+        "dbaeumer.vscode-eslint",
+        "esbenp.prettier-vscode",
+        "ms-vscode.vscode-typescript-next",
+        // Prisma schema syntax + formatting
+        "Prisma.prisma",
+        // Tailwind CSS class IntelliSense
+        "bradlc.vscode-tailwindcss",
+        // Python (for workers)
+        "ms-python.python",
+        "ms-python.vscode-pylance",
+        // Git helpers
+        "eamodio.gitlens",
+        // Docker files
+        "ms-azuretools.vscode-docker",
+        // REST client for testing API endpoints
+        "humao.rest-client",
+        // Editor config consistency
+        "EditorConfig.EditorConfig"
+      ],
+      "settings": {
+        "editor.defaultFormatter": "esbenp.prettier-vscode",
+        "editor.formatOnSave": true,
+        "editor.codeActionsOnSave": {
+          "source.fixAll.eslint": "explicit"
+        },
+        "typescript.preferences.importModuleSpecifier": "relative",
+        "[prisma]": {
+          "editor.defaultFormatter": "Prisma.prisma"
+        }
+      }
+    }
+  }
+}
