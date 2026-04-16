@@ -24,12 +24,7 @@ services:
     # Run from repo root so we have access to the full monorepo
     rootDir: .
     # Install pnpm, then install deps, build shared types, then build API
-    buildCommand: >-
-      npm install -g pnpm@9 &&
-      pnpm install --filter @researchvy/api... &&
-      pnpm --filter @researchvy/api db:generate &&
-      pnpm --filter @researchvy/shared build &&
-      pnpm --filter @researchvy/api build
+    buildCommand: "npm install -g pnpm@9 && pnpm install --filter @researchvy/api... && pnpm --filter @researchvy/api db:generate && pnpm --filter @researchvy/shared build && pnpm --filter @researchvy/api build"
     startCommand: node apps/api/dist/index.js
     # Render uses this to check the service is alive before routing traffic
     healthCheckPath: /health
