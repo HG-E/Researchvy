@@ -7,9 +7,10 @@
 //   The frontend polls GET /sync/status to show progress.
 
 import type { FastifyPluginAsync } from "fastify";
+import { PrismaClient } from "@prisma/client";
 import { z } from "zod";
 import { NotFoundError, ValidationError, formatError } from "../lib/errors.js";
-import { findAuthorByOrcid, fetchAuthorWorks, fetchPolicyMentions } from "../services/openalex.js";
+import { fetchAuthorWorks, fetchPolicyMentions } from "../services/openalex.js";
 import { saveVisibilityScore } from "../services/visibility-score.js";
 import type { DataSource } from "@prisma/client";
 import { MIN_SYNC_INTERVAL_MINUTES } from "@researchvy/shared";
@@ -121,13 +122,11 @@ export const syncRoutes: FastifyPluginAsync = async (fastify) => {
 // ─────────────────────────────────────────────────────────────────────────────
 
 async function runOpenAlexSync(
-  prisma: ReturnType<typeof import("@prisma/client").PrismaClient.prototype.constructor extends never ? never : typeof import("@prisma/client").PrismaClient.prototype.constructor>,
+  db: PrismaClient,
   researcherId: string,
   openAlexId: string,
   jobId: string
 ) {
-  // Use the correctly typed prisma client
-  const db = prisma as import("@prisma/client").PrismaClient;
 
   await db.syncJob.update({
     where: { id: jobId },

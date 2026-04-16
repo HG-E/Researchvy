@@ -79,12 +79,24 @@ export const dashboardRoutes: FastifyPluginAsync = async (fastify) => {
 
       const data: DashboardData = {
         researcher: {
-          ...researcher,
-          createdAt: researcher.createdAt.toISOString(),
-          updatedAt: undefined as never, // not in DashboardData type
+          id: researcher.id,
+          userId: researcher.userId,
+          orcidId: researcher.orcidId ?? undefined,
+          openAlexId: researcher.openAlexId ?? undefined,
+          displayName: researcher.displayName,
+          institution: researcher.institution ?? undefined,
+          department: researcher.department ?? undefined,
+          country: researcher.country ?? undefined,
+          fields: researcher.fields,
+          bio: researcher.bio ?? undefined,
+          websiteUrl: researcher.websiteUrl ?? undefined,
+          twitterHandle: researcher.twitterHandle ?? undefined,
+          hIndex: researcher.hIndex,
+          totalCitations: researcher.totalCitations,
+          publicationCount: researcher.publicationCount,
           lastSyncedAt: researcher.lastSyncedAt?.toISOString(),
-          orcidTokenExpiry: undefined as never,
-          orcidAccessToken: undefined as never, // NEVER expose tokens to frontend
+          createdAt: researcher.createdAt.toISOString(),
+          // orcidAccessToken deliberately excluded — never expose tokens to frontend
         },
         latestScore: latestScore
           ? {
