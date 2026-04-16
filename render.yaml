@@ -65,7 +65,9 @@ services:
         sync: false
 
   # ── Python Worker (OpenAlex data sync) ──────────────────────────────────
-  - type: worker
+  # Render free tier does NOT support background workers — use a cron job instead.
+  # Runs every 15 minutes: claims all pending sync jobs, processes them, then exits.
+  - type: cron
     name: researchvy-worker
     runtime: python
     # FREE tier — no card required
@@ -73,12 +75,13 @@ services:
     # Worker lives in its own sub-directory
     rootDir: workers
     buildCommand: pip install -r requirements.txt
-    startCommand: python worker.py
+    # --once flag: process all pending jobs then exit (required for cron mode)
+    startCommand: python worker.py --once
+    # Every 15 minutes
+    schedule: "*/15 * * * *"
     autoDeploy: true
     envVars:
       - key: DATABASE_URL
         sync: false
       - key: OPENALEX_EMAIL
         sync: false
-      - key: WORKER_POLL_INTERVAL
-        value: "15"

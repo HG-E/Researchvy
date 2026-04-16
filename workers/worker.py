@@ -210,9 +210,14 @@ HANDLERS = {
 }
 
 
-def run_worker(source_filter: str | None = None):
+def run_worker(source_filter: str | None = None, once: bool = False):
+    """
+    once=True  → Drain all pending jobs then exit (used by Render cron job).
+    once=False → Loop forever, sleeping between empty polls (used for local dev).
+    """
     sources = [source_filter] if source_filter else list(HANDLERS.keys())
-    log.info("worker.started", sources=sources, poll_interval=config.POLL_INTERVAL_SECONDS)
+    log.info("worker.started", sources=sources,
+             poll_interval=config.POLL_INTERVAL_SECONDS, once=once)
 
     while _running:
         did_work = False
@@ -239,9 +244,15 @@ def run_worker(source_filter: str | None = None):
             finally:
                 conn.close()
 
-        # Only sleep if no work was found — prevents idle waiting when queue is full
-        if not did_work:
-            time.sleep(config.POLL_INTERVAL_SECONDS)
+        if once:
+            # Cron mode: keep draining until no more jobs, then exit
+            if not did_work:
+                log.info("worker.cron_done", message="No more pending jobs — exiting")
+                break
+        else:
+            # Daemon mode: sleep between empty polls
+            if not did_work:
+                time.sleep(config.POLL_INTERVAL_SECONDS)
 
 
 if __name__ == "__main__":
@@ -252,6 +263,12 @@ if __name__ == "__main__":
         default=None,
         help="Process only jobs for this source (default: all)",
     )
+    parser.add_argument(
+        "--once",
+        action="store_true",
+        default=False,
+        help="Process all pending jobs then exit (for cron/scheduled use)",
+    )
     args = parser.parse_args()
 
-    run_worker(source_filter=args.source)
+    run_worker(source_filter=args.source, once=args.once)
