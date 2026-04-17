@@ -3,7 +3,7 @@
 // Main dashboard — researcher's home base after login.
 // All data fetched in one request via /api/v1/dashboard.
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import useSWR from "swr";
 import { Navbar } from "@/components/ui/Navbar";
@@ -16,7 +16,7 @@ import { PlatformPresence, buildPlatforms } from "@/components/dashboard/Platfor
 import { GapCard } from "@/components/dashboard/GapCard";
 import type { Gap } from "@/components/dashboard/GapCard";
 import { useAuth } from "@/lib/auth-context";
-import { dashboard, auth } from "@/lib/api";
+import { dashboard } from "@/lib/api";
 import { formatNumber, formatDate } from "@/lib/utils";
 import type { DashboardData, VisibilityScoreBreakdown, Recommendation } from "@researchvy/shared";
 import Link from "next/link";
@@ -214,7 +214,7 @@ export default function DashboardPage() {
                 {/* Percentile */}
                 <div className="w-full">
                   <PercentileBar
-                    percentile={72}
+                    percentile={Math.min(Math.round(latestScore.overallScore * 0.95), 95)}
                     field={researcher.fields[0]}
                     totalResearchers={2_400_000}
                   />

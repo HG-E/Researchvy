@@ -19,6 +19,7 @@ import { publicationRoutes } from "./routes/publications.js";
 import { visibilityRoutes } from "./routes/visibility.js";
 import { syncRoutes } from "./routes/sync.js";
 import { dashboardRoutes } from "./routes/dashboard.js";
+import { recommendationRoutes } from "./routes/recommendations.js";
 import { pingRoute } from "./routes/ping.js";
 
 const PORT = Number(process.env["API_PORT"] ?? 3001);
@@ -47,8 +48,9 @@ async function buildApp() {
   await app.register(researcherRoutes,  { prefix: "/api/v1/researchers" });
   await app.register(publicationRoutes, { prefix: "/api/v1/publications" });
   await app.register(visibilityRoutes,  { prefix: "/api/v1/visibility" });
-  await app.register(syncRoutes,        { prefix: "/api/v1/sync" });
-  await app.register(dashboardRoutes,   { prefix: "/api/v1/dashboard" });
+  await app.register(syncRoutes,            { prefix: "/api/v1/sync" });
+  await app.register(dashboardRoutes,       { prefix: "/api/v1/dashboard" });
+  await app.register(recommendationRoutes,  { prefix: "/api/v1/recommendations" });
 
   // ── Ping (keeps free Render instance warm via UptimeRobot — no auth)
   await app.register(pingRoute);

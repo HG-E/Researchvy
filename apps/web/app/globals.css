@@ -17,7 +17,6 @@
   }
 
   * {
-    @apply border-border;
     box-sizing: border-box;
   }
 
