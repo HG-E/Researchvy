@@ -71,6 +71,9 @@ importers:
       pino-pretty:
         specifier: ^11.0.0
         version: 11.3.0
+      prisma:
+        specifier: 5.22.0
+        version: 5.22.0
       undici:
         specifier: ^6.17.0
         version: 6.25.0
@@ -84,9 +87,6 @@ importers:
       '@types/node':
         specifier: ^20.12.12
         version: 20.19.39
-      prisma:
-        specifier: 5.22.0
-        version: 5.22.0
       tsx:
         specifier: ^4.10.5
         version: 4.21.0
