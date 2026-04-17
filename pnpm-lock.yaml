@@ -59,6 +59,12 @@ importers:
       '@researchvy/shared':
         specifier: workspace:*
         version: link:../../packages/shared
+      '@types/bcryptjs':
+        specifier: ^2.4.6
+        version: 2.4.6
+      '@types/node':
+        specifier: ^20.12.12
+        version: 20.19.39
       bcryptjs:
         specifier: ^2.4.3
         version: 2.4.3
@@ -74,6 +80,9 @@ importers:
       prisma:
         specifier: 5.22.0
         version: 5.22.0
+      typescript:
+        specifier: ^5.4.5
+        version: 5.9.3
       undici:
         specifier: ^6.17.0
         version: 6.25.0
@@ -81,18 +90,9 @@ importers:
         specifier: ^3.23.8
         version: 3.25.76
     devDependencies:
-      '@types/bcryptjs':
-        specifier: ^2.4.6
-        version: 2.4.6
-      '@types/node':
-        specifier: ^20.12.12
-        version: 20.19.39
       tsx:
         specifier: ^4.10.5
         version: 4.21.0
-      typescript:
-        specifier: ^5.4.5
-        version: 5.9.3
       vitest:
         specifier: ^1.6.0
         version: 1.6.1(@types/node@20.19.39)
@@ -159,7 +159,7 @@ importers:
         version: 5.9.3
 
   packages/shared:
-    devDependencies:
+    dependencies:
       typescript:
         specifier: ^5.4.5
         version: 5.9.3
