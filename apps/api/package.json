@@ -4,7 +4,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "tsx watch src/index.ts",
+    "dev": "tsx watch --env-file=../../.env src/index.ts",
     "db:generate": "prisma generate",
     "build": "PRISMA_GENERATE_SKIP_AUTOINSTALL=1 prisma generate && tsc",
     "start": "node dist/index.js",
