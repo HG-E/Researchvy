@@ -1,36 +1,15 @@
 {
-  // Vercel deployment config for the Next.js frontend.
-  //
-  // How to connect:
-  //   1. Go to vercel.com → New Project → Import Git Repository
-  //   2. Select HG-E/Researchvy
-  //   3. Set "Root Directory" to: apps/web
-  //   4. Vercel auto-detects Next.js — no framework override needed
-  //   5. Add environment variables (see below)
-  //
-  // Environment variables to set in Vercel dashboard:
-  //   NEXT_PUBLIC_API_URL  → https://your-api.railway.app
-  //   NEXTAUTH_SECRET      → (generate: openssl rand -hex 32)
-  //   NEXTAUTH_URL         → https://your-app.vercel.app
-
   "framework": "nextjs",
-
-  // These headers apply to every response from the Next.js app.
-  // They're security fundamentals — should be on every production web app.
   "headers": [
     {
       "source": "/(.*)",
       "headers": [
-        // Prevents clickjacking (embedding our app in iframes on other sites)
         { "key": "X-Frame-Options", "value": "DENY" },
-        // Stops browsers from MIME-sniffing response content-type
         { "key": "X-Content-Type-Options", "value": "nosniff" },
-        // Forces HTTPS for 1 year (includeSubDomains for thorough coverage)
         {
           "key": "Strict-Transport-Security",
           "value": "max-age=31536000; includeSubDomains"
         },
-        // Controls what browser features the page can use
         {
           "key": "Permissions-Policy",
           "value": "camera=(), microphone=(), geolocation=()"
@@ -38,8 +17,6 @@
       ]
     }
   ],
-
-  // Redirect bare domain to www (or vice versa) — consistent URLs
   "redirects": [
     {
       "source": "/home",
