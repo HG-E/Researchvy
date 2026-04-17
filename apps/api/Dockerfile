@@ -13,14 +13,12 @@ COPY pnpm-workspace.yaml .npmrc package.json pnpm-lock.yaml tsconfig.base.json .
 # Source
 COPY packages/shared/ ./packages/shared/
 COPY apps/api/ ./apps/api/
-COPY prisma/ ./prisma/
 
 # Install API + shared deps only (skips Next.js ~300MB)
 RUN pnpm install --filter @researchvy/api...
 
-# Run prisma generate using the binary installed in apps/api/node_modules
-# CWD is /app so schema path resolves to /app/prisma/schema.prisma
-RUN apps/api/node_modules/.bin/prisma generate --schema=prisma/schema.prisma
+# prisma generate uses default schema location (apps/api/prisma/schema.prisma)
+RUN cd apps/api && node_modules/.bin/prisma generate
 
 # Build shared types first (API imports from @researchvy/shared)
 RUN pnpm --filter @researchvy/shared build
