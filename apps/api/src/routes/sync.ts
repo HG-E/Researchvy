@@ -12,6 +12,7 @@ import { z } from "zod";
 import { NotFoundError, ValidationError, formatError } from "../lib/errors.js";
 import { fetchAuthorWorks, fetchPolicyMentions } from "../services/openalex.js";
 import { saveVisibilityScore } from "../services/visibility-score.js";
+import { generateRecommendations } from "../services/recommendations.js";
 import type { DataSource } from "@prisma/client";
 import { MIN_SYNC_INTERVAL_MINUTES } from "@researchvy/shared";
 
@@ -232,7 +233,10 @@ async function runOpenAlexSync(
     // 5. Recompute visibility score with fresh data
     await saveVisibilityScore(db, researcherId);
 
-    // 6. Mark job complete
+    // 6. Generate/update recommendations based on new score + publications
+    await generateRecommendations(db, researcherId);
+
+    // 7. Mark job complete
     await db.syncJob.update({
       where: { id: jobId },
       data: {
